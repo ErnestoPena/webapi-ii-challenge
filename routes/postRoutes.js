@@ -51,13 +51,10 @@ router.post('/', async (req,res)=>{
 //-----------------------------------------------------------------------------------------------------------
 
 //GET for '/:id/comments'
-
-//this GET is not working properly
 router.get('/:id/comments' , async (req,res) => {
 
     const postId = req.params.id;
     const checkPostId = await db.findById(postId);
-    const print = await console.log(checkPostId);
         try {
             if (checkPostId) {
                 const commentById = await db.findPostComments(postId);
@@ -79,12 +76,11 @@ router.post('/:id/comments' , async (req , res) => {
 
     try {
         const count = await db.findById(req.params.id);
-        if (count !== undefined) {
-            const comment = await req.body;
-            console.log(comment.text);
+        if (!count) {
+            const comment = req.body;
             if (comment) {
-                await db.insertComment(comment , req.params.id);
-                res.status(201).json({message: 'The comment was saved successfully'});
+                const insertedComment = await db.insertComment(comment , req.params.id);
+                res.status(200).json({message: `The comment ${insertedComment} was saved successfully`});
             } else {
                 res.status(400).json({errorMessage: "Please provide text for the comment."});
             }
@@ -106,11 +102,32 @@ router.delete('/:id' , async (req , res) => {
       }
     }
     catch(err) {
-        res.status(500).json({error: "The post could not be removed"})
+        res.status(500).json({error: "The post could not be removed"});
     }
 })
 
 
+//PUT method
+
+router.put('/:id' , async (req , res)=> {
+    const checkExistingPost = await db.findById(req.params.id);
+    const newPost = req.body;
+    try {
+        if (checkExistingPost) {
+            if (newPost.title && newPost.contents) {
+                const updatedPost = await db.update(req.params.id , newPost);
+                res.status(200).json({message:'Successful update'})
+            } else {
+                res.status(400).json({errorMessage: "Please provide title and contents for the post." });
+            }
+        } else {
+            res.status(404).json({message: "The post with the specified ID does not exist." });
+        }
+    }
+    catch(err) {
+        res.status(500).json({ error: "The post information could not be modified." });
+    }
+})
 
 
 module.exports = router;
