@@ -74,17 +74,17 @@ router.get('/:id/comments' , async (req,res) => {
 
 
 //POST to /:id/comments
-
+//There is a problem saving the data
 router.post('/:id/comments' , async (req , res) => {
 
     try {
-        const postIdExist = await db.findById(req.params.id);
-        if (postIdExist) {
+        const count = await db.findById(req.params.id);
+        if (count !== undefined) {
             const comment = await req.body;
             console.log(comment.text);
-            if (comment.text) {
-                await db.insertComment(comment.text , req.params.id);
-                res.status(201).json(comment);
+            if (comment) {
+                await db.insertComment(comment , req.params.id);
+                res.status(201).json({message: 'The comment was saved successfully'});
             } else {
                 res.status(400).json({errorMessage: "Please provide text for the comment."});
             }
@@ -96,17 +96,13 @@ router.post('/:id/comments' , async (req , res) => {
 })
 
 //DETETE method on /api/posts/:id
-//with unexisting posts, the catch is triggered 
-
 router.delete('/:id' , async (req , res) => {
     try {
-      const existingPost = await db.findById(req.params.id);
-      if (existingPost) {
-          console.log(`inside the if, ${id}`);
-          const removedPost = await db.remove(req.params.id);
-          res.status(200).json(removedPost);
+      const count = await db.remove(req.params.id);
+      if (count > 0) {
+          res.status(200).json({message: 'The post has been deleted'});
       } else {
-          res.status(400).json({message: "The post with the specified ID does not exist." });
+          res.status(400).json({message: `The post with the specified ID: ${postId} does not exist.` });
       }
     }
     catch(err) {
