@@ -11,7 +11,7 @@ const router = express.Router();
 //GET for all posts
 router.get('/' , async (req,res)=>{
     try {
-        const posts = await db.find(req.body);
+        const posts = await db.find();
         res.status(200).json(posts);
     }
     catch (error) {
@@ -24,21 +24,26 @@ router.get('/' , async (req,res)=>{
 router.get('/:id', async (req,res)=>{
     try {
         const singlePost = await db.findById(req.params.id);
-        res.status(200).json(singlePost)
+        const postId = req.params.id;
+
+        if (singlePost) {
+            res.status(200).json(singlePost);
+        } else {
+            res.status(404).json({message:`The post with the ID ${postId} could not be found`});
+        }
     }
     catch (error) {
-        res.status(404).json({message:`The post with the id ${req.params.id} does not exist`})
+        res.status(500).json({message:`There was an error retreiving the post from the database`})
     }
 })
 
 //Route to post on root
 router.post('/', async (req,res)=>{
-    const newPost = req.body;
-    const mytitle = req.body.title;
+    const { title , contents } = req.body;
 
         try {
-          if (req.body.title && req.body.contents) {
-            const addedPost = await db.insert(newPost);
+          if (title && contents) {
+            const addedPost = await db.insert(req.body);
             res.status(200).json(addedPost);
             } else {
                 res.status(400).json({message: "Please provide title and contents for the post."})
@@ -60,7 +65,7 @@ router.get('/:id/comments' , async (req,res) => {
                 const commentById = await db.findPostComments(postId);
                 res.status(200).json(commentById);
               } else {
-                  res.status(404).json({message: "The post with the specified ID does not exist." });
+                  res.status(404).json({message: `The post with the ID ${postId} does not exist.` });
             }
         }
         catch (err) {
@@ -71,12 +76,15 @@ router.get('/:id/comments' , async (req,res) => {
 
 
 //POST to /:id/comments
-//There is a problem saving the data
+/*Chirstina, in your previous comments you said to do another if statement to check if the comment was inserted.
+I am not sure if this is necessary after succesfull status code 200. For the db function arguments, I tried with just a
+single object and it did not work. Another student had the same problem and had to padd the id as a separate
+argument. We can go over this and see if thre is a single solution. */
 router.post('/:id/comments' , async (req , res) => {
 
     try {
         const count = await db.findById(req.params.id);
-        if (!count) {
+        if (count) {
             const comment = req.body;
             if (comment) {
                 const insertedComment = await db.insertComment(comment , req.params.id);
